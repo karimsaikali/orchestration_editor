@@ -1,0 +1,183 @@
+body {
+    background-color: white;
+    margin: 0;
+}
+
+#wrapper {
+     width: 100%;
+     margin: 0 auto;
+	 min-height: 95%;
+}
+#toolbar, #panel {
+    border: 1px solid black;
+    float: left;
+    color: white;
+	min-height: 99%
+}
+
+#panel {
+	position:relative;
+}
+
+#toolbar {
+     width: 15%;
+     background-color: white;
+}
+
+#panel {
+     width: 75%;
+     background-color: white;
+}
+
+.element {
+
+	width: 100px;
+	height: 50px;
+	background-color: #ff8c00;
+	position: absolute;
+	border: 1px solid black;
+	text-align: center;
+	font-family:"calibri";
+	word-wrap: break-word;
+}
+
+.eltSelected {
+	border: 3px solid black;
+}
+
+.newElementOverlay {
+ 
+	top: 0;
+	left: 0;
+	position: fixed;
+	width: 100%;
+	height: 100%;
+	z-index: 100;
+	display: none;
+	background-color: rgba(0,0,0,0.5);
+}
+
+.dialog {
+ 
+	width: 300px;
+	height:200px;
+	line-height: 20px;
+	position: fixed;
+	top: 25%;
+	left: 50%;
+	display: none;
+	margin-top: -10px;
+	margin-left: -150px;
+	background-color: white;
+	border-radius: 5px;
+	text-align: center;
+	z-index: 101;
+	padding-top: 30px;
+	word-wrap: break-word;
+}
+
+.modal {
+  
+	width: 500px;
+	height:400px;
+	line-height: 200px;
+	position: fixed;
+	top: 25%;
+	left: 50%;
+	display: none;
+	margin-top: -10px;
+	margin-left: -150px;
+	background-color: white;
+	border-radius: 5px;
+	text-align: center;
+	z-index: 101;
+}
+
+h2 {
+	
+	font-family:"calibri";
+	font-size: 24px;
+	color: black;
+	text-align: center;
+}
+
+#toolbar {
+	float: left;
+}
+
+.toolbarElement {
+
+	width: 100px;
+	height: 50px;
+	background-color: #ff8c00;
+	border: 1px solid black;
+	text-align: center;
+	margin-left: auto;
+    margin-right: auto;
+	margin-top: 20px;
+	font-family:"calibri";
+	word-wrap: break-word;
+}
+
+.propTable {
+
+	width: 100%;
+	font-family:"calibri";
+}
+
+.caption {
+
+	font-size: 24px;
+	color: black;
+	text-align: center;
+	margin-bottom: 20px;
+}
+
+.propInput {
+	width: 250px;
+}
+
+.propLabelCell {
+
+	text-align: right;
+	width: 150px;
+}
+
+.btnCell: {		
+	margin-top: 20px;
+}
+
+.btnGroup {
+	padding-top: 30px;
+}
+
+.btn {
+
+	background: #3498db;
+	background-image: -webkit-linear-gradient(top, #3498db, #2980b9);
+	background-image: -moz-linear-gradient(top, #3498db, #2980b9);
+	background-image: -ms-linear-gradient(top, #3498db, #2980b9);
+	background-image: -o-linear-gradient(top, #3498db, #2980b9);
+	background-image: linear-gradient(to bottom, #3498db, #2980b9);
+	-webkit-border-radius: 28;
+	-moz-border-radius: 28;
+	border-radius: 28px;
+	font-family: Arial;
+	color: #ffffff;
+	font-size: 14px;
+	padding: 10px 20px 10px 20px;
+	text-decoration: none;
+	margin-left: auto;
+    margin-right: auto;
+}
+
+.btn:hover {
+
+	background: #3cb0fd;
+	background-image: -webkit-linear-gradient(top, #3cb0fd, #3498db);
+	background-image: -moz-linear-gradient(top, #3cb0fd, #3498db);
+	background-image: -ms-linear-gradient(top, #3cb0fd, #3498db);
+	background-image: -o-linear-gradient(top, #3cb0fd, #3498db);
+	background-image: linear-gradient(to bottom, #3cb0fd, #3498db);
+	text-decoration: none;
+}

@@ -1,0 +1,57 @@
+<html>
+	<head>
+		<link rel = "stylesheet" type="text/css" href="./css/editor.css">
+		<script src = "./lib/dom.jsPlumb-1.7.5-min.js "></script>
+		<script src = "./ActivityDefinitionLoader.js "></script>
+		<script src = "./ActivityController.js"></script>
+		<script src = "./ActivityModel.js"></script>
+		<script src = "./ActivityView.js"></script>
+		<script src = "./DialogView.js"></script>
+		<script src = "./shapeConfig.js "></script>
+	</head>
+	<body id="body">
+		<div class="newElementOverlay" id="newElementOverlay"></div>
+		<div class="modal" id="newElementFormDiv">
+			<form id="newElementForm">
+			</form>
+		</div>
+		<div class="dialog" id="newDialog">
+			<div id="msgSpan"></div>
+			<div id="btnGroup" class="btnGroup">
+				<a class="btn" id="cancelBtn"></a>
+				<a class="btn" id="confirmBtn"></a>
+			</div>
+		</div>
+		<div id="wrapper">
+			<div id="toolbar">
+				<h2>Activity types</h2>
+				<div id="definitions"></div>
+			</div>
+			<div id="panel">				
+			</div>
+		</div>
+	</body>
+	<script>
+		
+		var activityController = new ActivityController();
+		jsPlumb.ready(function() {
+		
+			jsPlumb.setContainer(document.getElementById("panel"));
+			jsPlumb.bind("beforeDrop", function(e) { 
+				
+				activityController.onBeforeDrop(e, activityController)
+				return true;
+			});
+			
+			jsPlumb.bind("beforeDetach", function(e) { 
+				
+				activityController.onBeforeDetach(e, activityController)
+				return true;
+			});
+			
+			var activityDefinition = new ActivityDefinitionLoader(activityController);
+		});
+		
+		
+	</script>
+</html>

@@ -64,6 +64,10 @@ ActivityController.prototype.onActivityClick = function(view) {
 			jsPlumb.clearDragSelection();
 			view.setSelected(false);
 		}
+	}else if (pos !== -1 ) { /** remove the selection of the activity on click      */
+		this.selectedActivities.splice(pos,1);
+		jsPlumb.clearDragSelection();
+		view.setSelected(false);
 	}
 	
 	if (this.selectedActivities) {
@@ -204,7 +208,16 @@ ActivityController.prototype._handleDelete = function() {
 		var elt = this.selectedActivities.length == 1 ? "activity" : "activities";
 		var msg = "Are you sure you want to delete the selected " + elt + "?";
 		var dialogView = new DialogView(msg, this._deleteActivities);
-	}	
+		if (dialogView.confirmAction ){
+				for (var i = 0; i < this.selectedActivities.length; i++) {
+					jsPlumb.clearDragSelection();
+					view.setSelected(false);
+					this.selectedActivities.splice(pos,1);
+					self.activities[i] = null ;  // or self.activities.slice(i,1);
+				}
+		}
+	}
+
 };
 
 ActivityController.prototype._deleteActivities = function() {

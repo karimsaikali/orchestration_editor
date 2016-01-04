@@ -207,19 +207,35 @@ ActivityController.prototype._handleDelete = function() {
 	
 		var elt = this.selectedActivities.length == 1 ? "activity" : "activities";
 		var msg = "Are you sure you want to delete the selected " + elt + "?";
-		var dialogView = new DialogView(msg, this._deleteActivities);
-		if (dialogView.confirmAction ){
-				for (var i = 0; i < this.selectedActivities.length; i++) {
-					jsPlumb.clearDragSelection();
-					view.setSelected(false);
-					this.selectedActivities.splice(pos,1);
-					self.activities[i] = null ;  // or self.activities.slice(i,1);
-				}
-		}
+		var dialogView = null;
+		var self = this;
+		var dialogView = new DialogView(msg,function(){self._deleteActivities(self)},this.cancelDelete);
+	
+		
+
 	}
 
 };
 
-ActivityController.prototype._deleteActivities = function() {
+ActivityController.prototype._deleteActivities = function(self) {
 	console.log("deleting");
+
+
+	
+				for (var i = 0; i < self.selectedActivities.length ;i++) {
+					jsPlumb.clearDragSelection();
+					var name = self.selectedActivities[i];
+					var newActivityDefInstance =self.activities[name];
+					jsPlumb.remove(name);
+					//this.selectedActivities.splice(i,1);
+					//jsplumb.detach(name);
+					//document.getElementById(name).remove();
+					//newActivityDefInstance._RemoveView;
+				}
+		
+};
+ActivityController.prototype.cancelDelete = function() {
+	console.log("canceling delete");
+
+		
 };

@@ -1,4 +1,7 @@
 # orchestration_editor
-ActivityController.js edited on 11/15/2015 
-ActivityController.js edited on 1/4/2016 
+
+## Dependencies 
+[JavaScript Client to scriptr.io](https://github.com/scriptrdotio/libraries/tree/master/clients/html5-javascript)
+[JavaScript publish/subscribe client to scriptrio](https://github.com/scriptrdotio/libraries/tree/master/clients/publish_subscribe)
+
 

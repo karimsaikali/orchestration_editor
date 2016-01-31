@@ -1,3 +1,4 @@
+var NON_EDITABLE_FIELDS = ["startCondition", "overrideExecute", "fullTypeName"];
 
 /**
  * This class handles the display logic of an ActivityModel. It delegates most events
@@ -10,6 +11,8 @@ function ActivityView(model) {
 
 	this.activityNode = null;
 	this.propertyNode = null;
+	this.leftEndpoint = null;
+	this.rightEndpoint = null;
 	this.model = model;
 	this._buildElement();	
 }
@@ -110,8 +113,8 @@ ActivityView.prototype._buildElement = function() {
 	newElement.className = "element";	
 	panel.appendChild(newElement);
 	jsPlumb.draggable(newElement.id, {containment: true});
-	jsPlumb.addEndpoint(newElement.id, leftEndPointProperties, targetConnector); 
-	jsPlumb.addEndpoint(newElement.id, rightEndPointProperties, sourceConnector); 
+	this.leftEndpoint = jsPlumb.addEndpoint(newElement.id, leftEndPointProperties, targetConnector); 
+	this.rightEndpoint = jsPlumb.addEndpoint(newElement.id, rightEndPointProperties, sourceConnector); 
 	newElement.appendChild(document.createTextNode(newElement.id));
 	
 	// add the model's controller as a mouse double-click listener to this element
@@ -156,7 +159,7 @@ ActivityView.prototype._buildDefinitionForm = function() {
 		var isProperty = type != "function";
 		isProperty = isProperty && type != "object";
 		isProperty = isProperty ||  (this.model[prop].constructor == Array);
-		if (isProperty && prop != "fullTypeName") {
+		if (isProperty) {
 		
 			nodeRow = document.createElement("tr");
 			nodeLblCell = document.createElement("td");
@@ -168,10 +171,8 @@ ActivityView.prototype._buildDefinitionForm = function() {
 			nodeLabel.for = prop;
 			nodeLabel.appendChild(document.createTextNode(prop));
 			nodeLblCell.appendChild(nodeLabel);
-			if (prop == "startCondition") {  		
+			if (NON_EDITABLE_FIELDS.indexOf(prop) > -1)  {  		
 				
-				// start condition is not directly editable	so we display it as a label
-				// since labels automatically expand according to their content
 				var startLabel = document.createElement("label");
 				startLabel.appendChild(document.createTextNode(this.model[prop]));
 				nodeIptCell.appendChild(startLabel);				

@@ -1,39 +1,84 @@
 
 /**
  * This class controls everything that relates to activity definitions, from displaying
- * the list of available definitions to handling the events on activity definitons placed
+ * the list of available definitions to handling the events on activity definitions placed
  * on the design panel
  * @class ActivityController
  * @constructor ActivityController
  */
-function ActivityController() {
+function ActivityController(scriptrio) {
 	
 	this.count = 0;
 	this.definitions = {}; // Activity definitions as loaded from the back-end	
-	this.activities = {}; // Activity definitions instances, built on the base of definitions
+	this.activities = {}; // Activity models instances, built on the base of definitions
 	this.selectedActivities = [];
+	this.activityUpdateListeners = [];
 	
 	// detect key down events on page
 	var self = this;
 	document.onkeydown = function() {
 		self.onActivityKeydown();
 	};
+	
+	this.activityDefinitionDelegate = new ActivityDefinitionDelegate(this, scriptrio);
 }
+
+/**
+ * Add a listener to changes that happen on activities, to the list of listeners
+ * The listeners should implement the onActivityUpdated method
+ * @method addOnActivityUpdateListener
+ * @param {Object} listener an instance of any object that implements the onActivityUpdate method
+ * @return {Boolean} true if the listener was added, false otherwise
+ */
+ActivityController.prototype.addOnActivityUpdateListener = function(listener) {	
+
+	if (listener && listener.onActivityUpdated && typeof listener.onActivityUpdated == "function") {
+		
+		this.activityUpdateListeners.push(listener);
+		return true;
+	}	
+	
+	return false;
+};
+
+/**
+ * Remove a listener from the list of listeners
+ * @method removeActivityUpdateListener
+ * @param {Object} listener an instance 
+ * @return {Boolean} true if the listener was removed, else otherwise (usually because not in the list)
+ */
+ActivityController.prototype.removeActivityUpdateListener = function(listener) {	
+
+	if (listener) {
+		
+		var index = his.activityUpdateListeners.indexOf(listener);
+		if (index > -1) {
+			
+			this.activityUpdateListeners.splice(index, 1);
+			return true;
+		}
+	}	
+	
+	return false;
+};
 
 /**
  * Handles the creation of a new activity definition instance of the editor panel
  * and in the activities property of the ActivityController instance
  * @method addElement
- * @param {Object} self :  (optional) the current ActivityController instance
  * in case the method was called out of the context of the controller
  */ 
-ActivityController.prototype.addElement = function(self) {
+ActivityController.prototype.addElement = function() {
 	
-	self = self ? self : this;	
 	var id = event.target.id + this.count++; 
-	var newActivityDefInstance = new ActivityModel(id, self.definitions[event.target.id], self);
-	self.activities[id] = newActivityDefInstance;	
+	var newActivityDefInstance = new ActivityModel(id, this.definitions[event.target.id], this);
+	this.addActivity(newActivityDefInstance);	
 };
+
+ActivityController.prototype.addActivity = function(activityModel) {
+	this.activities[activityModel.name] = activityModel;	
+};
+
 
 /**
  * Display a form to show the properties of the selected activity definition
@@ -58,20 +103,25 @@ ActivityController.prototype.onActivityClick = function(view) {
 		
 			this.selectedActivities.push(event.target.id);
 			view.setSelected(true);
+			if (this.selectedActivities) {
+				jsPlumb.addToDragSelection(this.selectedActivities);
+			}
 		}else {
 		
 			this.selectedActivities.splice(pos,1);
-			jsPlumb.clearDragSelection();
+			jsPlumb.removeFromDragSelection(event.target.id);
 			view.setSelected(false);
 		}
-	}else if (pos !== -1 ) { /** remove the selection of the activity on click      */
-		this.selectedActivities.splice(pos,1);
+	}else {
+		
+		for (var i = 0; i < this.selectedActivities.length; i++) {
+			
+			var activity = this.activities[this.selectedActivities[i]];
+			activity.view.setSelected(false);
+		}
+		
+		this.selectedActivities = [];
 		jsPlumb.clearDragSelection();
-		view.setSelected(false);
-	}
-	
-	if (this.selectedActivities) {
-		jsPlumb.addToDragSelection(this.selectedActivities);
 	}
 };
 
@@ -89,7 +139,7 @@ ActivityController.prototype.onActivityKeydown = function() {
  
 /**
  * This method should be invoked when an activity has been updated in the editor
- * The method will reflect this changes when needed (e.g. the startCondition when 
+ * The method will reflect these changes when needed (e.g. the startCondition when 
  * the name changed)
  * @method onActivityChanged
  * @param {Object} oldAndNewValues : a JSON structure containing the modified
@@ -105,9 +155,13 @@ ActivityController.prototype.onActivityChanged = function(oldAndNewValues) {
 	for (var i = 0; i < keys.length; i++) {
 		
 		activity = this.activities[keys[i]];
-		if (activity.startCondition.indexOf(oldAndNewValues.name[0] + "_Done") > -1) {
+		if (activity.startCondition.indexOf(oldAndNewValues.name[0] + DONE) > -1) {
 			activity.startCondition = activity.startCondition.replace(oldAndNewValues.name[0], oldAndNewValues.name[1]);
 		}
+	}
+	
+	for (var i = 0; i < this.activityUpdateListeners.length; i++) {
+		this.activityUpdateListeners[i].onActivityUpdated(oldAndNewValues.name[1]);
 	}
 };
 
@@ -117,13 +171,13 @@ ActivityController.prototype.onActivityChanged = function(oldAndNewValues) {
  * @param {Array} definitions : array of activity definitions and their properties (name, fullTypeName, filters, etc.)
  * @param {Object} self : a reference to the current instance of ActivityController since this method is called out of context
  */
-ActivityController.prototype.onActivityDefinitionsLoaded = function(definitions, self) {
+ActivityController.prototype.onActivityDefinitionsLoaded = function(definitions) {
 	
 	for (var i = 0; i <  definitions.length; i++) {	
-		self.definitions[definitions[i].name] = definitions[i];
+		this.definitions[definitions[i].name] = definitions[i];
 	}
 	
-	self._refreshActivityDefinitions(definitions);
+	this._refreshActivityDefinitions(definitions);
 };
 
 /**
@@ -134,35 +188,35 @@ ActivityController.prototype.onActivityDefinitionsLoaded = function(definitions,
  * @param {Object} event : the onBeforeDrop event that is emitted but the JSPlumb framework. 
  * It contains data about the source and target activity definitions that are about to be connected
  */
-ActivityController.prototype.onBeforeDrop = function(event, self) {
+ActivityController.prototype.onBeforeDrop = function(event) {
 	
-	var targetActivity = self.activities[event.targetId];
-	var sourceActivity = self.activities[event.sourceId];
-	targetActivity.startCondition = sourceActivity.name + "_Done" + (targetActivity.startCondition ? " && " + targetActivity.startCondition : "");
+	var targetActivity = this.activities[event.targetId];
+	var sourceActivity = this.activities[event.sourceId];
+	targetActivity.startCondition = sourceActivity.name + DONE + (targetActivity.startCondition ? " && " + targetActivity.startCondition : "");
 };
 
 /**
  * This listener is automatically called by the JSPlumb framework when the designer drags away 
- * an connection from a target activity definition in order to remove it.
+ * a connection from a target activity definition in order to remove it.
  * The startCondition of the target activity is updated to remove the corresponding source activity
- * @method onBeforeDrop
+ * @method onBeforeDetach
  * @param {Object} event : the onBeforeDrop event that is emitted but the JSPlumb framework. 
  * It contains data about the source and target activity definitions that were connected
  */
-ActivityController.prototype.onBeforeDetach = function(event, self) {
+ActivityController.prototype.onBeforeDetach = function(event) {
 	
-	var targetActivity = self.activities[event.targetId];
-	var sourceActivity = self.activities[event.sourceId];
-	var condition = " && " + sourceActivity.name + "_Done";
+	var targetActivity = this.activities[event.targetId];
+	var sourceActivity = this.activities[event.sourceId];
+	var condition = " && " + sourceActivity.name + DONE;
 	var from = targetActivity.startCondition.indexOf(condition);
 	if (from == -1) {
 		
-		condition = sourceActivity.name + "_Done" + " && ";
+		condition = sourceActivity.name + DONE + " && ";
 		from = targetActivity.startCondition.indexOf(condition);
 	} 
 	
 	if (from == -1) {		
-		condition = sourceActivity.name + "_Done";
+		condition = sourceActivity.name + DONE;
 	}
 	
 	targetActivity.startCondition = targetActivity.startCondition.replace(condition, "");
@@ -171,11 +225,10 @@ ActivityController.prototype.onBeforeDetach = function(event, self) {
 ActivityController.prototype._refreshActivityDefinitions = function(definitions) {
 	
 	var definitionNode = document.getElementById("definitions");
-	var toolbarNode = document.getElementById("toolbar");
-	toolbarNode.removeChild(definitionNode);
-	var newDefinitions = document.createElement("div");
-	newDefinitions.id = "definitions"; 
-	toolbarNode.appendChild(newDefinitions);
+	while (definitionNode.firstChild) {
+		definitionNode.removeChild(definitionNode.firstChild);
+	}
+	
 	var currentDefinition = null;
 	for (var i = 0; i < definitions.length; i++) {
 		
@@ -197,7 +250,7 @@ ActivityController.prototype._addAvitivityDefinition = function(definition) {
 	activityDefinition.id = definition.name; 
 	activityDefinition.className = "toolbarElement";
 	activityDefinition.appendChild(document.createTextNode(definition.name));
-	activityDefinition.onclick =  function() {self.addElement(self);};
+	activityDefinition.onclick =  function() {self.addElement.call(self);};
 	definitionNode.appendChild(activityDefinition);
 };
 
@@ -207,35 +260,11 @@ ActivityController.prototype._handleDelete = function() {
 	
 		var elt = this.selectedActivities.length == 1 ? "activity" : "activities";
 		var msg = "Are you sure you want to delete the selected " + elt + "?";
-		var dialogView = null;
 		var self = this;
-		var dialogView = new DialogView(msg,function(){self._deleteActivities(self)},this.cancelDelete);
-	
-		
-
-	}
-
+		var dialogView = new DialogView(msg, function(){self._deleteActivities.call(self)});
+	}	
 };
 
-ActivityController.prototype._deleteActivities = function(self) {
+ActivityController.prototype._deleteActivities = function() {
 	console.log("deleting");
-
-
-	
-				for (var i = 0; i < self.selectedActivities.length ;i++) {
-					jsPlumb.clearDragSelection();
-					var name = self.selectedActivities[i];
-					var newActivityDefInstance =self.activities[name];
-					jsPlumb.remove(name);
-					//this.selectedActivities.splice(i,1);
-					//jsplumb.detach(name);
-					//document.getElementById(name).remove();
-					//newActivityDefInstance._RemoveView;
-				}
-		
-};
-ActivityController.prototype.cancelDelete = function() {
-	console.log("canceling delete");
-
-		
 };

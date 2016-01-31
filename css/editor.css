@@ -3,11 +3,25 @@ body {
     margin: 0;
 }
 
+h2 {
+	
+	font-family:"calibri";
+	font-size: 24px;
+	color: black;
+	text-align: left;
+}
+
 #wrapper {
      width: 100%;
      margin: 0 auto;
 	 min-height: 95%;
 }
+
+
+#toolbar {
+	float: left;
+}
+
 #toolbar, #panel {
     border: 1px solid black;
     float: left;
@@ -24,9 +38,32 @@ body {
      background-color: white;
 }
 
+#activities {
+	max-height: 50%;
+	overflow-y: auto;
+}
+
+#processes {
+	max-height: 50%;
+	min-height:50%;
+	overflow-y: auto;
+}
+
 #panel {
      width: 75%;
      background-color: white;
+}
+
+.process_definitions {
+	font-family:calibri;
+	font-size:16px;
+	color:black;
+	text-align:center;
+}
+
+.process_definitions:hover {
+	font-size:18px;
+	color:red;
 }
 
 .element {
@@ -93,18 +130,6 @@ body {
 	z-index: 101;
 }
 
-h2 {
-	
-	font-family:"calibri";
-	font-size: 24px;
-	color: black;
-	text-align: center;
-}
-
-#toolbar {
-	float: left;
-}
-
 .toolbarElement {
 
 	width: 100px;
@@ -113,7 +138,7 @@ h2 {
 	border: 1px solid black;
 	text-align: center;
 	margin-left: auto;
-    margin-right: auto;
+    	margin-right: auto;
 	margin-top: 20px;
 	font-family:"calibri";
 	word-wrap: break-word;

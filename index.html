@@ -2,12 +2,17 @@
 	<head>
 		<link rel = "stylesheet" type="text/css" href="./css/editor.css">
 		<script src = "./lib/dom.jsPlumb-1.7.5-min.js "></script>
-		<script src = "./ActivityDefinitionLoader.js "></script>
+		<script src = "./ActivityDefinitionDelegate.js "></script>
+		<script src = "./ProcessDefinitionDelegate.js "></script>
 		<script src = "./ActivityController.js"></script>
+		<script src = "./ProcessController.js"></script>
 		<script src = "./ActivityModel.js"></script>
 		<script src = "./ActivityView.js"></script>
 		<script src = "./DialogView.js"></script>
 		<script src = "./shapeConfig.js "></script>
+		<script src= "./config.js"></script>
+		<script src = "./scriptrio.js"></script>
+		<script src = "./util.js"></script>
 	</head>
 	<body id="body">
 		<div class="newElementOverlay" id="newElementOverlay"></div>
@@ -23,35 +28,39 @@
 			</div>
 		</div>
 		<div id="wrapper">
-			<div id="toolbar">
-				<h2>Activity types</h2>
-				<div id="definitions"></div>
-			</div>
+			<div id="toolbar">				
+				<div id="processes">
+					<h2>Existing processes</h2>
+					<div id="process_definitions" class="process_definitions"></div>	
+				</div>
+				<div id="activities">
+					<h2>Activity types</h2>
+					<div id="definitions"></div>				
+				</div>
+			</div>			
 			<div id="panel">				
 			</div>
 		</div>
 	</body>
 	<script>
 		
+		var scriptrio = new Scriptr({token:AUTH_TOKEN});	
 		var activityController = new ActivityController();
+		var procesController = new ProcessController(activityController, scriptrio);
 		jsPlumb.ready(function() {
 		
 			jsPlumb.setContainer(document.getElementById("panel"));
 			jsPlumb.bind("beforeDrop", function(e) { 
 				
-				activityController.onBeforeDrop(e, activityController)
+				activityController.onBeforeDrop.call(activityController, e);
 				return true;
 			});
 			
 			jsPlumb.bind("beforeDetach", function(e) { 
 				
-				activityController.onBeforeDetach(e, activityController)
+				activityController.onBeforeDetach.call(activityController, e);
 				return true;
-			});
-			
-			var activityDefinition = new ActivityDefinitionLoader(activityController);
-		});
-		
-		
+			});			
+		});		
 	</script>
 </html>

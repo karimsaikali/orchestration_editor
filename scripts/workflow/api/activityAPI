@@ -1,0 +1,37 @@
+/**
+ * this api should be called by any external entities in order to manipulate activity instances and
+ * activity definitions
+ * @module activityAPI
+ * @param {String} action : the identifier of the process instance that needs to be activated
+ * @param {String} actionParams : the name of the event to be fired by the engine towards the process instance
+ */
+
+var engine = require("workflow/engine");
+var activityDefinitionsManagement = require("workflow/activityDefManagement");
+var util = require("workflow/util");
+
+// initialize engine if needed
+engine.init();
+try {
+  
+  var req = util.handleRequest(request);
+  if (req.action && req.actionParams) {
+    return eval(req.action)(req.actionParams);
+  }
+}catch(exception) {
+  return util.processException(exception);
+} 
+
+/**
+ * retrieve the list of activity definitions scripts that have a name matching 
+ * the content of the "filters" variable, and return the properties defined in
+ * each XXXActivityDefinition class defined in these scripts
+ * @function listActivityDefinitions 
+ * @return {Array} an array of activity definitions properties such as the following
+ *  [{"filter": "", "fullTypeName": "workflow/activityDefinition", "name": "ActivityDefinition", "startCondition": ""}, ...]
+ */
+function listActivityDefinitions(params) {
+  
+  var activityDefinitionsMgt = new activityDefinitionsManagement.ActivityDefinitionsManagement(apsdb);
+  return activityDefinitionsMgt.listActivityDefinitions(params.length > 0 ? params : null);
+}

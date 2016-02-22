@@ -1,0 +1,105 @@
+function getGuid() {
+  
+  return ('xxxxxxxx-4xxx-yxxx-xxxxxxxx'.replace(/[xy]/g, function(c) {
+      var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+      return v.toString(16);
+  }));
+}
+
+function mergeXtoY(x, y){
+  
+  var xProperties = Object.keys(x);
+  for (var i = 0; i < xProperties.length; i++) {
+    
+      var key = xProperties[i];
+      if (typeof(x[key]) == "object") {
+        mergeXtoY(x[key], y[key]);
+      }else {
+        y[key] = x[key];
+      }
+  }
+}
+
+function processException(exception) {
+  
+  if (exception.errorCode) {
+      
+    return {
+      "status": "failure",
+      "errorCode": exception.errorCode,
+      "errorDetail": exception.errorDetail
+    };
+  }else {
+    return {
+      "status": "failure",
+      "errorCode": "Internal_Error",
+      "errorDetail": JSON.stringify(exception)
+    }
+  }
+ }
+
+function getClassNameFromModuleName(moduleName) {
+  
+  var typeName = moduleName.substring(moduleName.lastIndexOf("/") + 1);
+  return typeName[0].toUpperCase() + typeName.substring(1);
+}
+
+function handleRequest(request) {
+  
+  if (request.method.toUpperCase() == "POST" || request.method.toUpperCase() == "PUT") {
+    return _handleWrites(request);
+  }else {
+    return _handleReads(request);
+  }
+}
+
+function _handleWrites(request) { 
+   
+  if (request.headers["content-type"] == "application/json") {
+    
+    if (!request.body) {
+      throw {
+        "errorCode": "Parsing_Error",
+        "errorDetail": "The body of your request contains invalid JSON content"
+      }
+    }
+
+    return {
+      "action": request.body.action,
+      "actionParams": request.body.actionParams ? request.body.actionParams : []
+    }
+  }else {
+    
+    if (!request.parameters.action) {
+      
+      throw {
+        "errorCode": "Missing_Parameters",
+        "errorDetail": "Could not find action parameter in the request"
+      }
+    }
+    
+    return {
+      "action": request.parameters.action,
+      "actionParams": request.parameters.actionParams ? request.parameters.actionParams : []
+    }
+  }  
+}
+
+function _handleReads(request) {
+  
+  var action = request.parameters.action;
+  var actionParams = [];
+  var param = null;
+  for (var param in request.parameters) {
+   
+    // make sure it is not an auth_token timestamp, an action or a timestamp
+    if (param != "action" && param != "auth_token" && isNaN(param)) { 
+      actionParams.push(request.parameters[param]);
+    }
+  }
+ 
+  return {
+    "action": action,
+    "actionParams": actionParams
+  }
+}

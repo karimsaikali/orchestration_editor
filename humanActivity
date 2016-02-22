@@ -1,0 +1,31 @@
+var activityModule = require("workflow/activity");
+var activityDefinitionModule = require("workflow/humanActivityDefinition");
+var factoryModule = require("workflow/factory");
+var common = require("workflow/common");
+
+function HumanActivity(dto) {  
+  activityModule.Activity.call(this, dto);
+  this.fullTypeName = "workflow/humanActivity";
+}
+
+var dummyActivityDefinition = new activityDefinitionModule.HumanActivityDefinition({"name": "temporary"});
+HumanActivity.prototype = new activityModule.Activity({"processId": "temporary", "activityDefinition":dummyActivityDefinition});
+HumanActivity.prototype.constructor = HumanActivity;
+
+/**
+ * overrides the parent's fireEvent method. Throws "activityId_running" instead of "activityId_done"
+ * as it is up to the human actor to determine if the activity is done.
+ * @method fireEvent
+ * @param {Object} params :  use this parameter to pass any values to the method when overriding it
+ * @see Activity.fireEvent
+ */
+HumanActivity.prototype.fireEvent = function(params) {
+  
+  var event = {
+    
+  	"processId": this.processId,
+    "name": this.activityDefinition.name + "_" + common.RUNNING
+  }
+  
+  return event;
+};

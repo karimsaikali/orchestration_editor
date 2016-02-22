@@ -1,0 +1,123 @@
+var engine = require("workflow/engine");
+var processModule = require("workflow/process");
+var common = require("workflow/common");
+var workflowObjectModule = require("workflow/workflowObject");
+var factoryModule = require("workflow/factory");
+
+/**
+ * define a new process structure
+ * @class ProcessDefinition
+ * @constructor ProcessDefinition
+ * @param {Object} dto : parameters to initialize the process definition instance
+ *	{String} name : the name of the new process definition (mandatory)
+ *	{Array} initializeWith: an array of key/value pairs (class names/objet name) 
+ * 	{Boolean} fromStore: optional, defaults to false. If true, the process definition instance is created
+ * 	from a persisted process definition with the same name. All other parameters are ignored.
+ * 	Upon startup, the process instance will instanciate the classes and store the resulting
+ *	instances in storage.global.workflow[processId] under the name associated to the class
+ * 	e.g. [{"class":Order", "name":"suppliesOrder"}].
+ * Classes should be defined in workflow/schemas/templates
+ */
+function ProcessDefinition(dto) {
+  
+  if (!dto || !dto.name) {
+    
+    throw {
+     
+      "errorCode": "Invalid_Parameter",
+      "errorDetail": "ProcessDefinition.constructor. dto cannot be null or empty"
+    }
+  }
+  
+  workflowObjectModule.WorkflowObject.call(this);
+  this.name = dto.name;
+  this.activityDefinitions = {};
+  if (dto.fromStore) {
+    this._load();
+  }else {  
+    this.initializeWith = dto.initializeWith;
+  }
+  
+  this.persist(); // immediately persist the process definition 
+}
+
+// Extend WorkflowObject
+ProcessDefinition.prototype = new workflowObjectModule.WorkflowObject();
+ProcessDefinition.prototype.constructor = ProcessDefinition;
+
+/**
+ * @method addActivityDefinition
+ * @param {Object} activityDef : an instance of ActivityDefinition, to add to the current process definition
+ */
+ProcessDefinition.prototype.addActivityDefinition = function(activityDef) {
+  
+  if (activityDef) {
+  	this.activityDefinitions[activityDef.name] = activityDef;
+  }
+ 
+  this.persist();
+};
+
+/**
+ * @method removeActivityDefinition
+ * @param {String} activityDefName : the name of an ActivityDefinition, to remove from the current process definition
+ */
+ProcessDefinition.prototype.removeActivityDefinition = function(activityDefName) { 
+  
+  if (this.activityDefinitions[activityDefName]) {
+    delete this.activityDefinitions[activityDefName];
+  }
+  
+  this.persist();
+};
+
+/**
+ * create a new instance of Processs, based on this definition
+ * @method start
+ * @return {String} the identifier of the new process instance
+ */
+ProcessDefinition.prototype.start = function() {
+  
+  var dto = {
+  	"processDefinitionName": this.name  
+  };
+  
+  var processInstance = new processModule.Process(dto);
+  var processId = processInstance.id;
+  var queueName = common.eventQueuePrefix +  this.id;
+  var startEvent = {
+    
+  	"processId": processId,
+    "name": "start"
+  };
+  
+  engine.addEvent(startEvent);
+  return processId;
+};
+
+ProcessDefinition.prototype.persist = function() {
+  storage.global.workflow[this.name] = this;
+};   				   				   				   				   				   				   				   				   		
+
+ProcessDefinition.prototype._load = function() {
+  
+  if (!storage.global.workflow[this.name]) {
+    
+    throw {
+      "errorCode": "Process_Definition_Not_Found",
+      "errorDetail": "Coud not find a process definition matching the provided name: " + this.name
+    };
+  }
+
+  var data = storage.global.workflow[this.name];
+  var activitiesKeys = Object.keys(data.activityDefinitions);
+  var activityDef = null;
+  var factory = factoryModule.Factory.getInstance();
+  for (var i = 0; i < activitiesKeys.length; i++) { 
+    
+    activityDef = factory.getActivityDefinitionInstance(data.activityDefinitions[activitiesKeys[i]]);
+    this.activityDefinitions[activitiesKeys[i]] = activityDef;
+  }
+
+  this.initializeWith = data.initializeWith;
+};

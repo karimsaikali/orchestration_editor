@@ -1,0 +1,73 @@
+var processDefinitionModule = require("workflow/processDefinition");
+
+/**
+ * Controller between the ProcessDefinition and Process classes and the processAPI
+ * @class ProcessDefinitionManager
+ */
+function ProcessDefinitionManager() {
+}
+
+ProcessDefinitionManager.prototype.listProcessDefinitions = function() {
+  
+  var workflowContent = storage.global.workflow;
+  var processes = [];
+  for (var content in workflowContent) {
+    
+    var isProcess = content.indexOf("Process") != 0 && content != "data";
+    if (isProcess) {
+      processes.push(content);
+    }
+  }
+  
+  return processes;
+};
+
+//, definition:workflowContent[content]
+ProcessDefinitionManager.prototype.getProcessDefinition = function(processDefinitionId) {  
+  return storage.global.workflow[processDefinitionId];
+};
+
+ProcessDefinitionManager.prototype.saveProcessDefinition = function(processDefDto) {
+  
+  var processDef = new processDefinitionModule.ProcessDefinition(processDefDto.processData);
+  var activitiesDef = processDefDto.activities;
+  var activityDef = null;
+  for (var i = 0; i  < activitiesDef.length; i++) {
+  
+    activityDef = this._buildActivityDef(activitiesDef[i]);
+    processDef.addActivityDefinition(activityDef);
+  }
+  
+  return processDef.name;
+};
+
+ProcessDefinitionManager.prototype.startProcess = function(processParamsDto) {
+  
+  if (!processParamsDto || !processParamsDto.name) {
+    
+    throw {
+      "errorCode": "Invalid_Parameter",
+      "errorDetail": "You should at least provide a process name as a parameter (actionParams.name)"
+    };
+  }
+    
+  var dto = {
+    name: processParamsDto.name,
+    fromStore: true
+  };
+  
+  var processDef = new processDefinitionModule.ProcessDefinition(dto);
+  return processDef.start();
+};
+
+ProcessDefinitionManager.prototype._buildActivityDef = function(activityDef) {
+ 
+  var activityModule = require("workflow/" + activityDef.fullTypeName);
+  var className = ("" + activityDef.fullTypeName.charAt(0)).toUpperCase() + activityDef.fullTypeName.substring(1);
+  var activityDefInstance = new (eval(activityModule[className]))(activityDef);
+  if (activityDef.executeImpl) {
+    activityDefInstance.execute = eval(activityDef.executeImpl);
+  }
+  
+  return activityDefInstance;
+}

@@ -1,0 +1,193 @@
+var common = require("workflow/common");
+var util = require("workflow/util");
+var workflowObjectModule = require("workflow/workflowObject");
+var factoryModule = require("workflow/factory");
+
+/**
+ * create a new process instance from a definition or an existing persisted process instance
+ * @class Process
+ * @constructor Process
+ * @param {Object} dto : initialization parameters to create the process instance
+ * 	{String} processDefinitionName : the name of the process definition to relate to the current process instance (optional if id is provided)
+ *	{String} id : the identifier of a persisted process instance to use to initialize the current instance
+ *	{Array} events : new events to handle by the process instance, to be added to existing events if the instance was persisted before (optional)
+ */
+function Process(dto) {
+  
+  workflowObjectModule.WorkflowObject.call(this);
+  this.factory = factoryModule.Factory.getInstance();
+  this.activities = [];
+  this.data = {};
+  this.id = "";
+  this.events = [];
+  this.processDefinition = null;
+  
+  if (!dto) {
+    
+  	throw {
+    	"errorLocation":  "Process line 15",
+      	"errorCode": "Invalid_Parameter",
+        "errorDetail": "dto cannot be null"
+    }
+  }
+ 
+  if (!dto.processDefinitionName && !dto.id) {
+    
+    throw {
+
+      	"errorCode": "Invalid_Parameter",
+        "errorDetail": "Process.constructor. You need provide either a process id or a process definition name in the dto parameter"
+    }
+  }
+  
+  // if the process was already instanciated, we need to re-construct it from its data in the store
+  if (dto.id) {
+    
+    this.id = dto.id;
+    this._load(dto.id); // load persisted process data from store
+    this.events = dto.events ? this.events.concat(dto.events) : this.events; //merge events with queued process events
+  }else {
+  	
+    this._create(dto);
+  	this.events = dto.events ? dto.events : this.events;
+  }
+  
+  this.persist();
+}
+
+// Extend WorkflowObject
+Process.prototype = new workflowObjectModule.WorkflowObject();
+Process.prototype.constructor = Process;
+
+/**
+ * loop through the list of not running activities and ask every activity that has a verified
+ * condition to run. this model is only sustainable if all activities generate an event after run()
+ * is done. in the case where run() did not yield to the end of the activity, such as in the case
+ * of a human activity for example, the activity still has to fire an event (such as "activity_running")
+ * It is up to the process to check if its start condition is met before running the activity.
+ * @method run
+ */
+Process.prototype.run = function() {
+  
+  var activitiesToRun = this.activities;
+  var firedEvents = [];
+ 
+  // search for the first next activity that has a verify start condition and execute it, then persist.
+  // only run one activity per run() invocation
+  for (var i = 0; i < activitiesToRun.length; i++) {
+ 
+    if (activitiesToRun[i].status == common.NOT_RUNNING && activitiesToRun[i].activityDefinition.startConditionMet(this.events, this.id)) {    	      
+      var event = activitiesToRun[i].run(this.events);
+      console.log("activity " +  activitiesToRun[i].id + " generated event " +  JSON.stringify(event));
+      firedEvents.push(event);
+    }
+  }
+  
+  var engine = require("workflow/engine");
+  if (firedEvents.length > 0) {
+    engine.addEvents(firedEvents);
+  }
+  
+  this.persist();
+};
+
+/**
+ * serialize this process instance into the global store
+ * @method persist
+ */
+Process.prototype.persist = function() {
+  
+  delete this.processDefinition;
+  storage.global.workflow[this.id] = this;
+};
+
+/**
+ * create a process instance and all its activities using the definition of the process
+ * create an event queue in the global store such as key = "EventQueue_theProcessId"
+ * @method _create
+ * @param {Object} initDTO : an object for initializing the process instance
+ */
+Process.prototype._create = function(initDTO) {
+  
+  this.id = common.processPrefix + util.getGuid();
+  var queueName = common.eventQueuePrefix +  this.id;
+  storage.global.workflow[queueName] = []; // initialize an event queue for this process instance
+  storage.global.workflow[this.id] = {"id": this.id}; // intialize a storage for this process instance
+  this.processDefinition = storage.global.workflow[initDTO.processDefinitionName];
+  this.processDefinitionName = initDTO.processDefinitionName;
+  var activityDefinitionNames = Object.keys(this.processDefinition.activityDefinitions);
+  var activityDefinition = null;
+  for (var i = 0; i < activityDefinitionNames.length; i++) {
+    
+    activityDefinition = this.processDefinition.activityDefinitions[activityDefinitionNames[i]];
+    var dto = {
+          
+      "processId": this.id,
+      "activityDefinition": activityDefinition
+    };
+  
+    //this.activities.push(new activityModule.Activity(dto));
+    var factoryParams = {
+      
+      "type": activityDefinition.fullTypeName,
+      "fromDefinition": true,
+      "initParams": dto
+    };
+    
+    var activityInstance = this.factory.getActivityInstance(factoryParams);
+    this.activities.push(activityInstance);
+  }
+}
+
+/**
+ * reconstruct a process instance from its persisted data in the store
+ * @method _load
+ * @param {String} id :  the identifier of the process instance to load from the store
+ */
+Process.prototype._load = function(id) {
+  
+  // load the process instance's data from the store
+  var processData = storage.global.workflow[id];
+  if (!processData) {
+
+    throw {
+      
+      "errorCode": "ProcessInstance_Error",
+      "errorDetail": "Process._load. Could not retrieve process instance " +  dto.processId
+    }
+  }
+
+  this.processDefinitionName = processData.processDefinitionName;
+  this.processDefinition = storage.global.workflow[processData.processDefinitionName];
+  
+  // create activity instances using the process' data
+  for (var i = 0; i < processData.activities.length; i++) {
+    
+    var activity = processData.activities[i];
+    var factoryParams = {
+      
+      "type": activity.fullTypeName,
+      "initParams": activity
+    };
+    
+    this.activities.push(this.factory.getActivityInstance(factoryParams));
+  }
+
+  // load events
+  this.events = processData.events;
+  
+  // load data
+  this.data = processData.data;
+};
+
+/**
+ * remove the serialized data of the process (if any) from the global store
+ * @method _cleanup
+ */
+Process.prototype._cleanup = function() {
+  
+  var key = common.processPrefix + this.id
+  if (storage.global.workflow[key]) {
+    storage.gloabal.workflow[key].delete;
+  }
+};

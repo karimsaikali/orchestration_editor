@@ -1,0 +1,8 @@
+/**
+ * base class of all classes of the workflow library
+ * @class WorkflowObject
+ * @constructor WorkflowObject
+ */
+function WorkflowObject(){  
+
+}

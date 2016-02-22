@@ -1,0 +1,112 @@
+/**
+ * contains code to generate instance of different workflow types
+ * should be used instead of directly invoking constructors
+ * @class Factory
+ */
+var Factory = (function () {
+    
+  var instance;
+ 
+  function _createInstance() {
+    
+    var factoryObject = new _Factory();
+    return factoryObject;
+  }
+
+  return {
+    
+    /**
+     * @method getInstance
+     * @return {Object} always the same instance of _Factory
+     */
+    getInstance: function () {
+      
+      if (!instance) {
+        instance = _createInstance();
+      }
+      
+      return instance;
+    }
+  };
+})();
+
+/**
+ * the actual Factory implementation
+ * @class _Factory
+ * @constructor _Factory
+ */
+function _Factory() {  
+  this.cache = {};
+}
+
+/**
+ * create an instance of the given activity type, initialized
+ * with the provided parameters
+ * @function getActivityInstance
+ * @param {Object} dto
+ *	{String} type : the type of activity of which to create instances
+ *	{Boolean} fromDefinition : (optional, defaults to false). if true, specifies that the value of "type" matches an ActivityDefinition
+ *	the convention is that for every XXXActivityDefinition class, there is a matching XXXActivity class
+ *	{Object} initParams : other properties expected by the type's constructor (optional, depends on the targeted type)
+ */
+_Factory.prototype.getActivityInstance = function(dto) {
+  
+  if (!dto || !dto.type) {
+    
+    throw {
+      	
+      	"errorLocation":  "factory.getActivityInstance",
+    	"errorCode": "Invalid_Parameter",
+        "errorDetail": "dto cannot be null or empty and you need to specify the type of activity to create"
+    }
+  }
+  
+  var moduleName = dto.fromDefinition ? dto.type.substring(0, dto.type.length - "Definition".length) : dto.type;
+  var module = require(moduleName);
+  var className = "";
+  if (this.cache[moduleName]) {
+    className = this.cache[moduleName];
+  }else {  
+    
+  	var typeName = moduleName.substring(dto.type.lastIndexOf("/") + 1);
+  	className = typeName[0].toUpperCase() + typeName.substring(1);
+    this.cache[moduleName] = className; 
+  }
+  
+  return new module[className](dto.initParams);
+};
+
+/**
+ * create an instance of the given activity definition type,
+ * @method getActivityDefinitionInstance
+ * @param {Object} dto
+ *	{String} fullTypeName : full path to the class definition type
+ *  // the rest of properties of a class definition
+ */
+_Factory.prototype.getActivityDefinitionInstance = function(dto) {
+  
+  if (!dto || !dto.fullTypeName) {
+    
+    throw {
+      	
+      	"errorLocation":  "factory.getActivityDefinitionInstance",
+    	"errorCode": "Invalid_Parameter",
+        "errorDetail": "dto cannot be null or empty and you need to specify the type of activity definition to create"
+    }
+  }
+  
+  var moduleName = dto.fullTypeName;
+  var module = require(moduleName);
+  var className = "";
+  if (this.cache[moduleName]) {
+    className = this.cache[moduleName];
+  }else {  
+    
+  	var typeName = moduleName.substring(dto.fullTypeName.lastIndexOf("/") + 1);
+  	className = typeName[0].toUpperCase() + typeName.substring(1);
+    this.cache[moduleName] = className; 
+  }
+  
+  var def = new module[className](dto);
+  return def;
+}

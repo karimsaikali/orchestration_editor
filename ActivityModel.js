@@ -22,7 +22,7 @@ function ActivityModel(id, definition, controller) {
  * Update the properties of the model with the value of the provided structure 
  * updateData has field names == model's properties names ==> one to one mapping with properties)
  * @method update
- * @param {Object} updatedData : a json structure that maps the model's properties and has new values
+ * @param {Object} updatedData : a json structure that maps the model's properties and has new vdalues
  */
 ActivityModel.prototype.update = function(updatedData) {
 
@@ -63,4 +63,76 @@ ActivityModel.prototype._buildFromDefinition = function(definition) {
 			this[key] = definition[key]
 		}
 	}
+};
+
+
+ActivityModel.prototype.toDefinition = function() {
+	
+
+	var activityObj = {};
+	var keys = Object.keys(this);
+	for (var key in keys){
+		var prop = this[keys[key]];
+			if (keys[key]!="controller" && keys[key]!="view" )//&& keys[key]!="view"
+			{
+			
+			if(keys[key]=="view"){
+				var str = isCyclic(prop);
+				var Viewkeys = Object.keys(this.view);
+				
+
+				var viewObj ={};
+				for (var Vkey in Viewkeys){
+					var propView = this.view[Viewkeys[Vkey]];
+					if (Viewkeys[Vkey]!="model" && Viewkeys[Vkey]!="activityNode"){
+						
+						viewObj[Viewkeys[Vkey]] = propView;
+					}
+				}
+				activityObj[keys[key]] = viewObj;
+			}else {
+				activityObj[keys[key]] = prop;	
+			}
+
+		}
+		
+	}
+	return activityObj;
+};
+
+function isCyclic(obj) {
+  var keys = [];
+  var stack = [];
+  var stackSet = new Set();
+  var detected = false;
+
+  function detect(obj, key) {
+    if (typeof obj != 'object') { return; }
+    
+    if (stackSet.has(obj)) { // it's cyclic! Print the object and its locations.
+      var oldindex = stack.indexOf(obj);
+      var l1 = keys.join('.') + '.' + key;
+      var l2 = keys.slice(0, oldindex + 1).join('.');
+      console.log('CIRCULAR: ' + l1 + ' = ' + l2 + ' = ' + obj);
+      console.log(obj);
+	  //delete obj[l2];
+      detected = true;
+      return;
+    }
+
+    keys.push(key);
+    stack.push(obj);
+    stackSet.add(obj);
+    for (var k in obj) { //dive on the object's children
+      if (obj.hasOwnProperty(k)) { detect(obj[k], k); }
+    }
+
+    keys.pop();
+    stack.pop();
+    stackSet.delete(obj);
+    return;
+  }
+
+  detect(obj, 'obj');
+  return obj;
 };

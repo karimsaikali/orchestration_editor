@@ -7,12 +7,22 @@
  * @constructor
  */
 function ProcessController(activityController, scriptrio) {
-
+	this.toolbar= null;
 	this.definitions = {};
 	this.currentProcess = {};
+	this.items=[];
+	this.itemsList=[];
 	this.activityController = activityController;
 	this.activityController.addOnActivityUpdateListener(this);
 	this.processDefinitionDelegate = new ProcessDefinitionDelegate(this, scriptrio);
+}
+
+ProcessController.prototype.setToolbar = function(toolbar){
+	this.toolbar= toolbar;
+}
+
+ProcessController.prototype.loadProcessDefinition= function(){
+	this.processDefinitionDelegate.loadProcessDefinitions();
 }
 
 /**
@@ -86,14 +96,38 @@ ProcessController.prototype.onActivityUpdated = function(activityName) {
  */
 ProcessController.prototype._refreshProcessDefinitionsList = function(definitions) {
 	
-	var definitionNode = document.getElementById("process_definitions");
-	while (definitionNode.firstChild) {
-		definitionNode.removeChild(definitionNode.firstChild);
-	}
-	
+	//var definitionNode = document.getElementById("process_definitions");
+	//var definitionList = document.getElementById("tb_toolbar_item_Process");
+	//while (definitionNode.firstChild) {
+	//	definitionNode.removeChild(definitionNode.firstChild);
+	//}
+
 	for (var i = 0; i < definitions.length; i++) {
-		this._addProcessDefinitionId(definitions[i]);
+		//this._addProcessDefinitionId(definitions[i]);
+		 var e1 = document.createElement("process"+i);
+		// var Item ={text: definitions[i], img: 'icon-page' ,name: definitions[i]};
+		 var ItemList ={Name: definitions[i],Description:definitions[i]};
+		// e1.type = "text";
+       //  e1.name = definitions[i];
+		// this.items[i]=Item;
+		 this.itemsList[i]=ItemList;
+		// definitionList.appendChild(e1);
+
 	}
+	//this.toolbar.buildMenuProcess(this.items);
+	var processGrid = new ProcessGrid(this);
+};
+
+ProcessController.prototype.saveProcessDefinition = function(ProcessName){
+	this.activityController.refreshActivityDef();
+	var processDefinitionParam = {
+			processData:{
+				name:ProcessName
+			},
+			activities: this.activityController.activitiesDef
+	};
+	this.processDefinitionDelegate.saveProcessDefinition(processDefinitionParam);
+	//this.processDefinitionDelegate.loadProcessDefinitions();
 };
 
 /*
@@ -121,6 +155,8 @@ ProcessController.prototype._addProcessDefinitionId = function(processDefinition
  */
 ProcessController.prototype._rebuildConnections = function(activityModels) {
 	
+	
+	
 	for (var activityName in activityModels) {
 			
 		var startCondition = activityModels[activityName].startCondition;
@@ -143,3 +179,8 @@ ProcessController.prototype._rebuildConnections = function(activityModels) {
 		}
 	}
 };
+
+ProcessController.prototype.NewProcess = function() {
+	this.activityController.eraseAllActivities();
+};
+

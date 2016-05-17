@@ -7,14 +7,80 @@
 		<script src = "./ActivityController.js"></script>
 		<script src = "./ProcessController.js"></script>
 		<script src = "./ActivityModel.js"></script>
+		<script src = "./ProcessGrid.js"></script>
 		<script src = "./ActivityView.js"></script>
 		<script src = "./DialogView.js"></script>
 		<script src = "./shapeConfig.js "></script>
 		<script src= "./config.js"></script>
 		<script src = "./scriptrio.js"></script>
 		<script src = "./util.js"></script>
+		<script src= "./AlertView.js"></script>
+		<script src="./SaveProcessView.js"></script>
+        <link rel="stylesheet" type="text/css" href="http://w2ui.com/src/w2ui-1.4.2.min.css" />
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
+        <script type="text/javascript" src="http://w2ui.com/src/w2ui-1.4.2.min.js"></script>
+		<link rel="stylesheet" href="./lib/jqwidgets-ver4.1.2/jqwidgets/styles/jqx.base.css" type="text/css" />
+		<script type="text/javascript" src="./lib/jqwidgets-ver4.1.2/jqwidgets/jqxcore.js"></script>
+		<script type="text/javascript" src="./lib/jqwidgets-ver4.1.2/jqwidgets/jqxdata.js"></script>
+		<script type="text/javascript" src="./lib/jqwidgets-ver4.1.2/jqwidgets/jqxbuttons.js"></script>
+		<script type="text/javascript" src="./lib/jqwidgets-ver4.1.2/jqwidgets/jqxscrollbar.js"></script>
+		<script type="text/javascript" src="./lib/jqwidgets-ver4.1.2/jqwidgets/jqxmenu.js"></script>
+		<script type="text/javascript" src="./lib/jqwidgets-ver4.1.2/jqwidgets/jqxcheckbox.js"></script>
+		<script type="text/javascript" src="./lib/jqwidgets-ver4.1.2/jqwidgets/jqxlistbox.js"></script>
+		<script type="text/javascript" src="./lib/jqwidgets-ver4.1.2/jqwidgets/jqxdropdownlist.js"></script>
+		<script type="text/javascript" src="./lib/jqwidgets-ver4.1.2/jqwidgets/jqxgrid.js"></script>
+		<script type="text/javascript" src="./lib/jqwidgets-ver4.1.2/jqwidgets/jqxgrid.selection.js"></script>
+		<script type="text/javascript" src="./lib/jqwidgets-ver4.1.2/jqwidgets/jqxgrid.pager.js"></script>
+		<script type="text/javascript" src="./lib/jqwidgets-ver4.1.2/jqwidgets/jqxgrid.sort.js"></script>
+		<script type="text/javascript" src="./lib/jqwidgets-ver4.1.2/jqwidgets/jqxgrid.filter.js"></script>
+		<script type="text/javascript" src="./lib/jqwidgets-ver4.1.2/jqwidgets/jqxgrid.columnsresize.js"></script>
+		<script type="text/javascript" src="./lib/jqwidgets-ver4.1.2/jqwidgets/jqxgrid.selection.js"></script> 
+		<script type="text/javascript" src="./lib/jqwidgets-ver4.1.2/scripts/demos.js"></script>
+	
+		<!--<script type="text/javascript" src="generatedata.js"></script>-->
+		<script src= "./toolbar.js"></script>
+		<script type="text/javascript">
+/*				$(window).on('mouseover', (function () {
+						window.onbeforeunload = null;
+				}));
+				$(window).on('mouseout', (function () {
+						window.onbeforeunload =  function(){};
+				})); -->
+				window.onbeforeunload = ConfirmLeave();
+				function ConfirmLeave() {
+							event = window.event;
+							event.stopPropagation();
+							var msg= "do you want to save the process before leaving?"
+							var dialogView = new DialogView(msg,function(){SaveProcessV()},null);
+							window.onbeforeunload = null;
+				}
+			/*	var prevKey="";
+					$(document).keydown(function (e) {            
+				if (e.key=="F5") {
+					window.onbeforeunload = function(){
+						ConfirmLeave();
+						window.onbeforeunload   = null;
+					};
+				}
+				else if (e.key.toUpperCase() == "W" && prevKey == "CONTROL") {                
+					window.onbeforeunload = ConfirmLeave;   
+				}
+				else if (e.key.toUpperCase() == "R" && prevKey == "CONTROL") {
+					window.onbeforeunload = ConfirmLeave;
+				}
+				else if (e.key.toUpperCase() == "F4" && (prevKey == "ALT" || prevKey == "CONTROL")) {
+					window.onbeforeunload = ConfirmLeave;
+				}
+				prevKey = e.key.toUpperCase();
+				});
+				function SaveProcessV()  {
+	
+					var dialogView = new DialogView(msg,function(){SaveProcessV()},null);
+				}; */
+		</script>
 	</head>
 	<body id="body">
+   
 		<div class="newElementOverlay" id="newElementOverlay"></div>
 		<div class="modal" id="newElementFormDiv">
 			<form id="newElementForm">
@@ -27,12 +93,37 @@
 				<a class="btn" id="confirmBtn"></a>
 			</div>
 		</div>
+		<div class="dialog" id="AlertDialog">
+			<div id="msgSpanok" ></div>
+			<div id="btnGroup" class="btnGroup">
+				<a class="btn" id="okBtn"></a>
+			</div>
+		</div>
+        <div class="dialog" id="SaveDialog">
+			<div id="msgSpansave" ></div>
+			<br/>
+            <div id="inputProcess">
+            	<input id="ProcessName" type="text" class="inputs" placeholder="Process Name" />
+            </div>
+			<div id="btnGroup" class="btnGroup">
+				<a class="btn" id="SaveBtn"></a>
+				<a class="btn" id="exitBtn"></a>
+
+			</div>
+		</div>
+		 <div class="dialogGrid" id="ProcessDialog">
+			 <div id="jqxgrid">
+			</div>
+			<br>
+			<a class="btn" id="CloseBtn"></a>
+		</div>
 		<div id="wrapper">
-			<div id="toolbar">				
-				<div id="processes">
+         <div id="MDItoolbar" style="padding: 4px; border: 1px solid silver; border-radius: 3px"></div>
+		 <div id="toolbar">				
+			<!--	<div id="processes">
 					<h2>Existing processes</h2>
 					<div id="process_definitions" class="process_definitions"></div>	
-				</div>
+				</div>-->
 				<div id="activities">
 					<h2>Activity types</h2>
 					<div id="definitions"></div>				
@@ -47,9 +138,13 @@
 		var scriptrio = new Scriptr({token:AUTH_TOKEN});	
 		var activityController = new ActivityController();
 		var procesController = new ProcessController(activityController, scriptrio);
+		//procesController.loadProcessDefinition();
+		var ToolBar = new ToolBarView(procesController);
+		procesController.setToolbar (ToolBar);
 		jsPlumb.ready(function() {
 		
 			jsPlumb.setContainer(document.getElementById("panel"));
+			jsPlumb.setZoom(0.2);
 			jsPlumb.bind("beforeDrop", function(e) { 
 				
 				activityController.onBeforeDrop.call(activityController, e);

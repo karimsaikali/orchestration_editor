@@ -14,7 +14,7 @@ function ProcessDefinitionDelegate(listener, scriptrio) {
 
 	this.listener = listener;
 	this.scriptrio = scriptrio ? scriptrio : new Scriptr({token: AUTH_TOKEN}); // we assume that config.js is loaded
-	this.loadProcessDefinitions();
+	//this.loadProcessDefinitions();
 }
 
 /**
@@ -75,6 +75,23 @@ ProcessDefinitionDelegate.prototype.getProcessDefinition = function(processDefin
 	scriptrio.request(dto);
 };
 
-ProcessDefinitionDelegate.prototype.saveProcessDefinition = function(processDefinition) {
-
+ProcessDefinitionDelegate.prototype.saveProcessDefinition = function(processDefinitionParam) {
+		// invoke remote API on scriptr;
+			var self = this;
+			var dto = {
+				
+				api: "workflow/api/processAPI", 
+				params: { 
+					action: "saveProcessDefinition",
+					actionParams: processDefinitionParam
+				},
+				method: "POST",
+				asJson: true,
+				onSuccess: function(definition){
+					self.listener.onProcessDefinitionLoaded.call(self.listener, definition);
+				}, 
+				onFailure: function(error) {alert(JSON.stringify(error));}
+			};
+			
+			scriptrio.request(dto);
 };

@@ -13,6 +13,7 @@ function ActivityController(scriptrio) {
 	this.activities = {}; // Activity models instances, built on the base of definitions
 	this.selectedActivities = [];
 	this.activityUpdateListeners = [];
+	this.activitiesDef = {}; // Activities models instances , without the view and the controller 
 	
 	// detect key down events on page
 	var self = this;
@@ -261,10 +262,82 @@ ActivityController.prototype._handleDelete = function() {
 		var elt = this.selectedActivities.length == 1 ? "activity" : "activities";
 		var msg = "Are you sure you want to delete the selected " + elt + "?";
 		var self = this;
-		var dialogView = new DialogView(msg, function(){self._deleteActivities.call(self)});
+		var dialogView = new DialogView(msg,function(){self._deleteActivities(self)},this.cancelDelete);
 	}	
 };
 
-ActivityController.prototype._deleteActivities = function() {
+ActivityController.prototype.eraseAllActivities = function() {
+	var msg="are you sure you want to erase activities";
+	var self = this;
+	var dialogView = new DialogView(msg,function(){self.deleteAllActivities(self)},this.cancelDelete);
+	
+	
+}
+
+ActivityController.prototype._deleteActivities = function(self) {
 	console.log("deleting");
+	
+		for (var i = 0; i < self.selectedActivities.length ;i++) {
+ 					jsPlumb.clearDragSelection();
+ 					var name = self.selectedActivities[i];
+ 					var newActivityDefInstance =self.activities[name];
+ 					jsPlumb.remove(name);
+					
+ 				}
 };
+
+ActivityController.prototype.deleteAllActivities = function(self) {
+	console.log("deleting");
+	this.count = 0;
+	jsPlumb.empty("panel");
+	//var connectionList = jsPlumb.getConnections("panel");   
+	//	for (var i = 0; i < self.count ;i++) {
+ 	//				jsPlumb.clearDragSelection();
+ 	//				var name = self.activities[i].name;
+ 	//				var newActivityDefInstance =self.activities[name];
+ 	//				jsPlumb.remove(name);
+ 	//			}
+	/*	self.activities.forEach(function(activity){
+			var name = activity.name;
+			jsPlumb.remove(name);
+		});		*/
+};
+
+ActivityController.prototype.refreshActivityDef = function() {
+	
+	this.activitiesDef = {};
+	var currentDefinition = null;
+	var keys = Object.keys(this.activities);
+	for (var i = 0; i < keys.length; i++) {
+		var activityDef= null;
+		activity = this.activities[keys[i]];
+		activityDef =  activity.toDefinition();
+		//var obj = isCyclic(activityDef);
+		this.activitiesDef[keys[i]]= activityDef;
+		
+	}
+
+};
+function isCyclic (obj) {
+  var seenObjects = [];
+
+  function detect (obj) {
+    if (obj && typeof obj === 'object') {
+      if (seenObjects.indexOf(obj) !== -1) {
+        return true;
+      }
+      seenObjects.push(obj);
+      for (var key in obj) {
+        if (obj.hasOwnProperty(key) && detect(obj[key])) {
+
+          console.log(obj, 'cycle at ' + key);
+		  delete obj[key];
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  return detect(obj);
+}
